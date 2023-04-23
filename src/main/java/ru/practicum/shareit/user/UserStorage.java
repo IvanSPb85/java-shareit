@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 public interface UserStorage {
@@ -9,9 +8,9 @@ public interface UserStorage {
 
     Optional<User> update(User user);
 
-    Optional<User> findUser(long userId);
+    Optional<User> getUser(long userId);
 
-    Collection<User> findAll();
+    Collection<User> getAll();
 
     void removeUser(long userId);
 }

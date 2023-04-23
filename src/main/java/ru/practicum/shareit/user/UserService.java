@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.DataBaseException;
 import ru.practicum.shareit.user.dto.UserDto;
 
+import java.security.InvalidParameterException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,38 +19,46 @@ public class UserService {
 
     public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
+        checkEmail(user);
         Optional<User> result = userStorage.save(user);
         if (result.isPresent()) {
-            User savedUser = result.get();
             log.info("Пользователь с id = {} успешно создан.", result.get().getId());
-            return UserMapper.toUserDto(savedUser);
+            return UserMapper.toUserDto(result.get());
         }
         throw new DataBaseException("Ошибка базы данных при создании пользователя.");
     }
 
     public UserDto updateUser(long userId, UserDto userDto) {
+        User updatingUser = UserMapper.toUser(findUser(userId));
         User user = UserMapper.toUser(userDto);
-        user.setId(userId);
-        Optional<User> result = userStorage.update(user);
+        if (user.getEmail() != null) {
+            checkEmail(user);
+            updatingUser.setEmail(user.getEmail());
+        }
+        if (user.getName() != null) {
+            updatingUser.setName(user.getName());
+        }
+        Optional<User> result = userStorage.update(updatingUser);
         if (result.isPresent()) {
             User updatedUser = result.get();
-            log.info("Пользователь с id = {} успешно обновлен.", result.get().getId());
+            log.info("Пользователь с id = {} успешно обновлен.", updatedUser.getId());
             return UserMapper.toUserDto(updatedUser);
         }
         throw new DataBaseException("Ошибка базы данных при обновлении пользователя.");
     }
 
     public UserDto findUser(long userId) {
-        Optional<User> result = userStorage.findUser(userId);
-        if (result.isPresent()) {
-            log.info("Пользователь с id = {} найден.", result.get().getId());
-            return UserMapper.toUserDto(result.get());
+        Optional<User> result = userStorage.getUser(userId);
+        if (result.isEmpty()) {
+            throw new InvalidParameterException(String.format("Пользователь с id = %s не найден.", userId));
         }
-        throw new DataBaseException(String.format("Ошибка базы данных при поиске пользователя c id = %s.", userId));
+        log.info("Пользователь с id = {} найден.", result.get().getId());
+        return UserMapper.toUserDto(result.get());
+
     }
 
     public Collection<UserDto> findAll() {
-        Collection<User> users = userStorage.findAll();
+        Collection<User> users = userStorage.getAll();
         log.info("Найдено {} пользователей.", users.size());
         return users.stream().map(UserMapper::toUserDto).collect(Collectors.toList());
     }
@@ -58,5 +67,14 @@ public class UserService {
         findUser(userId);
         userStorage.removeUser(userId);
         log.info("Пользователь с id = {} успешно удален.", userId);
+    }
+
+    private void checkEmail(User user) {
+        userStorage.getAll().forEach(user1 -> {
+            if (user1.getEmail().equals(user.getEmail()) && user1.getId() != user.getId()) {
+                throw new DataBaseException(String.format("Пользователь с email = %s уже существует.",
+                        user.getEmail()));
+            }
+        });
     }
 }

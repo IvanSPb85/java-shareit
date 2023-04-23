@@ -12,7 +12,7 @@ import javax.validation.Valid;
 
 import java.util.Collection;
 
-import static ru.practicum.shareit.Constant.*;
+import static ru.practicum.shareit.constant.Constant.*;
 
 @Slf4j
 @RequiredArgsConstructor

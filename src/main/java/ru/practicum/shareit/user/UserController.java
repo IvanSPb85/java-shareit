@@ -51,5 +51,4 @@ public class UserController {
         log.info(REQUEST_DELETE_LOG, request.getRequestURI());
         userService.deleteUser(id);
     }
-
 }

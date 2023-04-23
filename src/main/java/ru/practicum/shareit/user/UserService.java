@@ -3,11 +3,12 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.DataBaseException;
+import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import java.security.InvalidParameterException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,7 @@ public class UserService {
 
     public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
-        checkEmail(user);
+        checkEmail(userStorage.getAll(), user);
         Optional<User> result = userStorage.save(user);
         if (result.isPresent()) {
             log.info("Пользователь с id = {} успешно создан.", result.get().getId());
@@ -32,7 +33,9 @@ public class UserService {
         User updatingUser = UserMapper.toUser(findUser(userId));
         User user = UserMapper.toUser(userDto);
         if (user.getEmail() != null) {
-            checkEmail(user);
+            List<User> checkUsers = userStorage.getAll()
+                    .stream().filter(user1 -> user1.getId() != userId).collect(Collectors.toList());
+            checkEmail(checkUsers, user);
             updatingUser.setEmail(user.getEmail());
         }
         if (user.getName() != null) {
@@ -69,9 +72,9 @@ public class UserService {
         log.info("Пользователь с id = {} успешно удален.", userId);
     }
 
-    private void checkEmail(User user) {
-        userStorage.getAll().forEach(user1 -> {
-            if (user1.getEmail().equals(user.getEmail()) && user1.getId() != user.getId()) {
+    private void checkEmail(Collection<User> users, User user) {
+        users.forEach(user1 -> {
+            if (user1.getEmail().equals(user.getEmail())) {
                 throw new DataBaseException(String.format("Пользователь с email = %s уже существует.",
                         user.getEmail()));
             }

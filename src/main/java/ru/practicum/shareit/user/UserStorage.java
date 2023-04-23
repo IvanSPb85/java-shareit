@@ -1,15 +1,17 @@
 package ru.practicum.shareit.user;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserStorage {
-    User create(User user);
+    Optional<User> save(User user);
 
-    User update(User user);
+    Optional<User> update(User user);
 
-    User findUser(long userId);
+    Optional<User> findUser(long userId);
 
-    List<User> findAll();
+    Collection<User> findAll();
 
     void removeUser(long userId);
 }

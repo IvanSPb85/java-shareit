@@ -2,7 +2,6 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import ru.practicum.shareit.request.ItemRequest;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotBlank;
@@ -18,6 +17,6 @@ public class ItemDto {
     @Max(200)
     private String description;
     @NotNull
-    private boolean available;
+    private Boolean available;
     private long request;
 }

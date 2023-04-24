@@ -43,9 +43,8 @@ public class UserServiceImpl implements UserService {
         }
         Optional<User> result = userStorage.update(updatingUser);
         if (result.isPresent()) {
-            User updatedUser = result.get();
-            log.info("Пользователь с id = {} успешно обновлен.", updatedUser.getId());
-            return UserMapper.toUserDto(updatedUser);
+            log.info("Пользователь с id = {} успешно обновлен.", result.get().getId());
+            return UserMapper.toUserDto(result.get());
         }
         throw new DataBaseException("Ошибка базы данных при обновлении пользователя.");
     }

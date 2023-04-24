@@ -23,24 +23,23 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> create(@RequestHeader("X-Later-User-Id") long userId,
-                                          @RequestBody @Valid ItemDto itemDto,
-                                          HttpServletRequest request) {
+                                          @RequestBody @Valid ItemDto itemDto, HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.create(itemDto, userId), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.create(userId, itemDto), HttpStatus.OK);
     }
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<ItemDto> update(@RequestHeader("X-Later-User-Id") long userId, @PathVariable long itemId,
                                           @RequestBody ItemDto itemDto, HttpServletRequest request) {
         log.info(REQUEST_PATCH_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.update(itemDto, userId), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.update(userId, itemId, itemDto), HttpStatus.OK);
     }
 
     @GetMapping("/{itemId}")
     public ResponseEntity<ItemDto> findItemById(@RequestHeader("X-Later-User-Id") long userId,
                                                 @PathVariable long itemId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.findItemById(itemId), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.findItemById(userId, itemId), HttpStatus.OK);
     }
 
     @GetMapping
@@ -51,9 +50,10 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Collection<ItemDto>> findItemForRent(@RequestParam String itemName,
+    public ResponseEntity<Collection<ItemDto>> findItemForRent(@RequestHeader("X-Later-User-Id") long userId,
+                                                               @RequestParam String itemName,
                                                                HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.findItemForRent(itemName), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.findItemForRent(userId, itemName), HttpStatus.OK);
     }
 }

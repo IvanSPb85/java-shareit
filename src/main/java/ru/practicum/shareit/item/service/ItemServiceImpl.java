@@ -29,17 +29,18 @@ public class ItemServiceImpl implements ItemService {
             userService.findUser(userId);
         } catch (InvalidParameterException e) {
             log.warn("Нельзя сохранить вещь для несуществующего пользователя с id = {}", userId);
-            throw new InvalidParameterException(e.getMessage());
+            throw new InvalidParameterException(
+                    String.format("Нельзя сохранить вещь для несуществующего пользователя с id = %d", userId));
         }
         Item item = ItemMapper.toItem(itemDto, userId);
         Optional<Item> result = itemStorage.save(item);
         if (result.isPresent()) {
-            log.info("{} с id = {} успешно сохранена в базе.",
+            log.info("\"{}\" с id = {} успешно сохранена в базе.",
                     result.get().getName(), result.get().getId());
             return ItemMapper.toItemDto(result.get());
         }
-        log.warn(String.format("Ошибка базы данных при сохранении %s.", itemDto.getName()));
-        throw new DataBaseException(String.format("Ошибка базы данных при сохранении %s.", itemDto.getName()));
+        log.warn(String.format("Ошибка базы данных при сохранении \"%s\".", itemDto.getName()));
+        throw new DataBaseException(String.format("Ошибка базы данных при сохранении \"%s\".", itemDto.getName()));
     }
 
     @Override
@@ -60,17 +61,17 @@ public class ItemServiceImpl implements ItemService {
         }
         Optional<Item> result = itemStorage.update(foundItem);
         if (result.isPresent()) {
-            log.info(String.format("%s c id = %d успешно обновлена", foundItem.getName(), foundItem.getId()));
+            log.info(String.format("\"%s\" c id = %d успешно обновлена", foundItem.getName(), foundItem.getId()));
             return ItemMapper.toItemDto(foundItem);
         }
-        log.warn(String.format("Ошибка базы данных при обновлении вещи с id = %d.", itemId));
+        log.warn("Ошибка базы данных при обновлении вещи с id = {}.", itemId);
         throw new DataBaseException(String.format("Ошибка базы данных при обновлении вещи с id = %d.", itemId));
     }
 
     @Override
     public ItemDto findItemById(long userId, long itemId) {
         Item item = findItem(itemId);
-        log.info(String.format("По id = %d в базе найден(a) %s.", item.getId(), item.getName()));
+        log.info("По id = {} в базе найден(a) \"{}\".", item.getId(), item.getName());
         return ItemMapper.toItemDto(item);
     }
 
@@ -83,7 +84,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Collection<ItemDto> findItemForRent(long userId, String itemName) {
-        if (itemName.isBlank()) return Collections.emptyList();
+        if (itemName.isBlank()) {
+            log.info("При поиске вещи по названию получена пустая строка в запросе. Возвращен пустой список.");
+            return Collections.emptyList();
+        }
         Collection<Item> items = itemStorage.getItemForRent(itemName);
         log.info("По запросу пользователя с id = {} найдено {} вещей с названием \"{}\".",
                 userId, items.size(), itemName);
@@ -93,7 +97,7 @@ public class ItemServiceImpl implements ItemService {
     private Item findItem(long itemId) {
         Optional<Item> result = itemStorage.getItemById(itemId);
         if (result.isEmpty()) {
-            log.info(String.format("Вещь с id = %d не найдена в базе.", itemId));
+            log.info("Вещь с id = {} не найдена в базе.", itemId);
             throw new InvalidParameterException(String.format("Вещь с id = %d не найдена в базе.", itemId));
         }
         return result.get();

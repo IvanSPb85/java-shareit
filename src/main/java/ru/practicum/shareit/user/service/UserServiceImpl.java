@@ -26,7 +26,8 @@ public class UserServiceImpl implements UserService {
         checkEmail(userStorage.getAll(), user);
         Optional<User> result = userStorage.save(user);
         if (result.isPresent()) {
-            log.info("Пользователь с id = {} успешно создан.", result.get().getId());
+            log.info("Пользователь с id = {} и email = {} успешно создан.",
+                    result.get().getId(), result.get().getEmail());
             return UserMapper.toUserDto(result.get());
         }
         throw new DataBaseException("Ошибка базы данных при создании пользователя.");
@@ -55,7 +56,7 @@ public class UserServiceImpl implements UserService {
     public UserDto findUser(long userId) {
         Optional<User> result = userStorage.getUser(userId);
         if (result.isEmpty()) {
-            throw new InvalidParameterException(String.format("Пользователь с id = %s не найден.", userId));
+            throw new InvalidParameterException(String.format("Пользователь с id = %d не найден.", userId));
         }
         log.info("Пользователь с id = {} найден.", result.get().getId());
         return UserMapper.toUserDto(result.get());
@@ -78,7 +79,7 @@ public class UserServiceImpl implements UserService {
         users.forEach(user1 -> {
             if (user1.getEmail().equals(user.getEmail())) {
                 throw new DataBaseException(String.format("Пользователь с email = %s уже существует.",
-                        user.getEmail()));
+                        user1.getEmail()));
             }
         });
     }

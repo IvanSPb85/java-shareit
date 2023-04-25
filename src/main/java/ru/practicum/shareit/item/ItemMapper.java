@@ -11,7 +11,6 @@ public class ItemMapper {
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.isAvailable())
-                .request(item.getRequest() != null ? item.getRequest().getId() : null) // todo
                 .build();
     }
 
@@ -21,7 +20,6 @@ public class ItemMapper {
                 .description(itemDto.getDescription())
                 .available(itemDto.getAvailable())
                 .owner(userId)
-//                .request() // todo
                 .build();
     }
 }

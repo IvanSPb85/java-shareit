@@ -24,7 +24,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleBadRequest(final InvalidParameterException e) {
         log.warn(e.getMessage());
         return Map.of("error", e.getMessage());

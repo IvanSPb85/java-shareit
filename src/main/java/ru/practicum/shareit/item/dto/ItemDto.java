@@ -2,8 +2,8 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -11,10 +11,11 @@ import javax.validation.constraints.NotNull;
 @Data
 public class ItemDto {
     private long id;
-    @Max(50)
+    @Length(max = 50)
     @NotBlank
     private String name;
-    @Max(200)
+    @Length(max = 200)
+    @NotBlank
     private String description;
     @NotNull
     private Boolean available;

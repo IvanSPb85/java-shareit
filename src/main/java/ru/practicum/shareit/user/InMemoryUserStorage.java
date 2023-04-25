@@ -7,7 +7,7 @@ import java.util.*;
 @Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
-    private long userId;
+    private long counterId;
 
     @Override
     public Optional<User> save(User user) {
@@ -41,6 +41,6 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     private long generateId() {
-        return ++userId;
+        return ++counterId;
     }
 }

@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface ItemStorage {
-    Optional<Item> add(Item item);
+    Optional<Item> save(Item item);
 
     Optional<Item> update(Item item);
 

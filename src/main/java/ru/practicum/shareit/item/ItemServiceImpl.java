@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.UserService;
 
 import java.security.InvalidParameterException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,11 +19,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final ItemStorage itemStorage;
+    private final UserService userService;
 
     @Override
     public ItemDto create(long userId, ItemDto itemDto) {
+        try {
+            userService.findUser(userId);
+        } catch (InvalidParameterException e) {
+            log.warn("Нельзя сохранить вещь для несуществующего пользователя с id = {}", userId);
+            throw new InvalidParameterException(e.getMessage());
+        }
         Item item = ItemMapper.toItem(itemDto, userId);
-        Optional<Item> result = itemStorage.add(item);
+        Optional<Item> result = itemStorage.save(item);
         if (result.isPresent()) {
             log.info("{} с id = {} успешно сохранена в базе.",
                     result.get().getName(), result.get().getId());
@@ -42,7 +51,7 @@ public class ItemServiceImpl implements ItemService {
             foundItem.setName(itemDto.getName());
         }
         if (itemDto.getDescription() != null) {
-            foundItem.setName(itemDto.getName());
+            foundItem.setDescription(itemDto.getDescription());
         }
         if (itemDto.getAvailable() != null) {
             foundItem.setAvailable(itemDto.getAvailable());
@@ -72,6 +81,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Collection<ItemDto> findItemForRent(long userId, String itemName) {
+        if (itemName.isBlank()) return Collections.emptyList();
         Collection<Item> items = itemStorage.getItemForRent(itemName);
         log.info("По запросу пользователя с id = {} найдено {} вещей с названием \"{}\".",
                 userId, items.size(), itemName);

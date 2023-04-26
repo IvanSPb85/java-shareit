@@ -82,7 +82,7 @@ public class ItemServiceTests {
         ItemDto thirdItem = itemService.create(2L,
                 ItemDto.builder().name("Name").description("description").available(true).build());
 
-        assertThat(itemService.findItemsByOwner(1l))
+        assertThat(itemService.findItemsByOwner(1L))
                 .hasSize(2).asList().containsAll(List.of(itemDto, secondItem));
         assertThat(itemService.findItemsByOwner(2L)).hasSize(1)
                 .asList().containsAll(List.of(thirdItem));

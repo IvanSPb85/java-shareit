@@ -16,12 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UserServiceTests {
     private UserService service;
-    private UserDto testUserDto;
+    private final UserDto testUserDto = new UserDto("TestUser", "TestUser@email");
 
     @BeforeEach
     public void createNewUserService() {
         service = new UserServiceImpl(new InMemoryUserStorage());
-        testUserDto = new UserDto(1L, "TestUser", "TestUser@email");
     }
 
     @Test
@@ -60,9 +59,9 @@ public class UserServiceTests {
     @Test
     public void updateDuplicateEmailTEst() {
         UserDto userDto = service.create(testUserDto);
-        UserDto secondUser = service.create(new UserDto(2L, "secondUser", "User@mail"));
+        UserDto secondUser = service.create(new UserDto("secondUser", "User@mail"));
         DataBaseException exception = assertThrows(DataBaseException.class,
-                () -> service.updateUser(1L, new UserDto(2L, "name", "User@mail")));
+                () -> service.updateUser(1L, new UserDto("name", "User@mail")));
         assertEquals(exception.getMessage(), String.format("Пользователь с email = %s уже существует.",
                 secondUser.getEmail()));
     }
@@ -85,7 +84,7 @@ public class UserServiceTests {
     @Test
     public void findAllTest() {
         UserDto user = service.create(testUserDto);
-        UserDto secondUser = service.create(new UserDto(1L, "name", "email@email"));
+        UserDto secondUser = service.create(new UserDto("name", "email@email"));
         List<UserDto> users = List.of(user, secondUser);
         assertEquals(service.findAll().size(), 2);
         assertEquals(service.findAll(), users);

@@ -62,7 +62,8 @@ public class UserServiceTests {
         UserDto secondUser = service.create(new UserDto("secondUser", "User@mail"));
         DataBaseException exception = assertThrows(DataBaseException.class,
                 () -> service.updateUser(1L, new UserDto("name", "User@mail")));
-        assertEquals(exception.getMessage(), String.format("Пользователь с email = %s уже существует.",
+        assertEquals(exception.getMessage(), String.format("Невозможно обновить пользователя с email = %s," +
+                        " т.к. уже существует другой пользователь с таким email",
                 secondUser.getEmail()));
     }
 
@@ -96,6 +97,7 @@ public class UserServiceTests {
         assertEquals(service.findAll().size(), 1);
         InvalidParameterException exception = assertThrows(InvalidParameterException.class,
                 () -> service.deleteUser(2L));
-        assertEquals(exception.getMessage(), String.format("Пользователь с id = %d не найден.", 2));
+        assertEquals(exception.getMessage(), String.format(
+                "Удаление пользователя с id = %d неосуществимо, т.к. данный пользователь не найден.", 2));
     }
 }

@@ -12,7 +12,13 @@ public interface UserStorage {
 
     Optional<User> getUser(long userId);
 
-    Collection<User> getAll();
+    Collection<User> getAllUsers();
 
     void removeUser(long userId);
+
+    boolean isExistUser(long userId);
+
+    boolean isExistEmail(String email);
+
+    Collection<String> getAllEmails();
 }

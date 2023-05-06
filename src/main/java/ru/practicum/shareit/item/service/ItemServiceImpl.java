@@ -39,7 +39,7 @@ public class ItemServiceImpl implements ItemService {
                     result.get().getName(), result.get().getId());
             return ItemMapper.toItemDto(result.get());
         }
-        log.warn(String.format("Ошибка базы данных при сохранении \"%s\".", itemDto.getName()));
+        log.warn("Ошибка базы данных при сохранении \"{}\".", itemDto.getName());
         throw new DataBaseException(String.format("Ошибка базы данных при сохранении \"%s\".", itemDto.getName()));
     }
 
@@ -61,7 +61,7 @@ public class ItemServiceImpl implements ItemService {
         }
         Optional<Item> result = itemStorage.update(foundItem);
         if (result.isPresent()) {
-            log.info(String.format("\"%s\" c id = %d успешно обновлена", foundItem.getName(), foundItem.getId()));
+            log.info("\"{}\" c id = {} успешно обновлена", foundItem.getName(), foundItem.getId());
             return ItemMapper.toItemDto(foundItem);
         }
         log.warn("Ошибка базы данных при обновлении вещи с id = {}.", itemId);

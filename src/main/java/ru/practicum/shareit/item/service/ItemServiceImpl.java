@@ -3,12 +3,12 @@ package ru.practicum.shareit.item.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemMapper;
-import ru.practicum.shareit.item.dao.ItemStorage;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
@@ -26,14 +26,15 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto create(long userId, ItemDto itemDto) {
+        User user;
         try {
-            userService.findUser(userId);
+            user = UserMapper.toUser(userService.findUser(userId));
         } catch (InvalidParameterException e) {
             log.warn("Нельзя сохранить вещь для несуществующего пользователя с id = {}", userId);
             throw new InvalidParameterException(
                     String.format("Нельзя сохранить вещь для несуществующего пользователя с id = %d", userId));
         }
-        Item item = ItemMapper.toItem(itemDto, userId);
+        Item item = ItemMapper.toItem(itemDto, user);
         Item savaItem = itemRepository.save(item);
         log.info("\"{}\" с id = {} успешно сохранена в базе.",
                 savaItem.getName(), savaItem.getId());
@@ -43,7 +44,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto update(long userId, long itemId, ItemDto itemDto) {
         Item foundItem = findItem(itemId);
-        if (foundItem.getOwner() != userId) {
+        if (foundItem.getOwner().getId() != userId) {
             throw new InvalidParameterException(
                     String.format("Пользователь с id = %d не имеет доступа к вещи с id = %d", userId, itemId));
         }
@@ -70,7 +71,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Collection<ItemDto> findItemsByOwner(long userId) {
-        Collection<Item> items = itemRepository.findAllByOwner(userId);
+        Collection<Item> items = itemRepository.findAllByOwnerId(userId);
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
         return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }

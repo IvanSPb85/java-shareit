@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.DataBaseException;
+import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.dao.ItemStorage;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class ItemServiceImpl implements ItemService {
-    private final ItemStorage itemStorage;
+    private final ItemRepository itemRepository;
     private final UserService userService;
 
     @Override
@@ -33,14 +34,10 @@ public class ItemServiceImpl implements ItemService {
                     String.format("Нельзя сохранить вещь для несуществующего пользователя с id = %d", userId));
         }
         Item item = ItemMapper.toItem(itemDto, userId);
-        Optional<Item> result = itemStorage.save(item);
-        if (result.isPresent()) {
-            log.info("\"{}\" с id = {} успешно сохранена в базе.",
-                    result.get().getName(), result.get().getId());
-            return ItemMapper.toItemDto(result.get());
-        }
-        log.warn("Ошибка базы данных при сохранении \"{}\".", itemDto.getName());
-        throw new DataBaseException(String.format("Ошибка базы данных при сохранении \"%s\".", itemDto.getName()));
+        Item savaItem = itemRepository.save(item);
+        log.info("\"{}\" с id = {} успешно сохранена в базе.",
+                savaItem.getName(), savaItem.getId());
+        return ItemMapper.toItemDto(savaItem);
     }
 
     @Override
@@ -59,13 +56,9 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getAvailable() != null) {
             foundItem.setAvailable(itemDto.getAvailable());
         }
-        Optional<Item> result = itemStorage.update(foundItem);
-        if (result.isPresent()) {
-            log.info("\"{}\" c id = {} успешно обновлена", foundItem.getName(), foundItem.getId());
-            return ItemMapper.toItemDto(foundItem);
-        }
-        log.warn("Ошибка базы данных при обновлении вещи с id = {}.", itemId);
-        throw new DataBaseException(String.format("Ошибка базы данных при обновлении вещи с id = %d.", itemId));
+        Item updateItem = itemRepository.save(foundItem);
+        log.info("\"{}\" c id = {} успешно обновлена", updateItem.getName(), updateItem.getId());
+        return ItemMapper.toItemDto(updateItem);
     }
 
     @Override
@@ -77,7 +70,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Collection<ItemDto> findItemsByOwner(long userId) {
-        Collection<Item> items = itemStorage.getItemByOwner(userId);
+        Collection<Item> items = itemRepository.findAllByOwner(userId);
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
         return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
@@ -88,14 +81,14 @@ public class ItemServiceImpl implements ItemService {
             log.info("При поиске вещи по названию получена пустая строка в запросе. Возвращен пустой список.");
             return Collections.emptyList();
         }
-        Collection<Item> items = itemStorage.getItemForRent(itemName);
+        Collection<Item> items = itemRepository.search(itemName);
         log.info("По запросу пользователя с id = {} найдено {} вещей с названием \"{}\".",
                 userId, items.size(), itemName);
         return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 
     private Item findItem(long itemId) {
-        Optional<Item> result = itemStorage.getItemById(itemId);
+        Optional<Item> result = itemRepository.findById(itemId);
         if (result.isEmpty()) {
             log.info("Вещь с id = {} не найдена в базе.", itemId);
             throw new InvalidParameterException(String.format("Вещь с id = %d не найдена в базе.", itemId));

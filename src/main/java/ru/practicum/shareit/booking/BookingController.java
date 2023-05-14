@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingItemDto;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,14 +25,14 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<BookingDto> create(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                             @RequestBody @Valid BookingDto bookingDto, HttpServletRequest request) {
+    public ResponseEntity<BookingItemDto> create(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+                                                 @RequestBody @Valid BookingDto bookingDto, HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
         return new ResponseEntity<>(bookingService.create(userId, bookingDto), HttpStatus.OK);
     }
 
     @PatchMapping("/{bookingId}")
-    public ResponseEntity<BookingDto> approve(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+    public ResponseEntity<BookingItemDto> approve(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
                                               @PathVariable long bookingId,
                                               @RequestParam(name = "approved") Boolean approved,
                                               HttpServletRequest request) {
@@ -40,14 +41,14 @@ public class BookingController {
     }
 
     @GetMapping("/{bookingId}")
-    public ResponseEntity<BookingDto> getBookingById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+    public ResponseEntity<BookingItemDto> getBookingById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
                                                      @PathVariable long bookingId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(bookingService.findBookingById(userId, bookingId), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<BookingDto>> getAllBookingsByUser(
+    public ResponseEntity<Collection<BookingItemDto>> getAllBookingsByUser(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userid,
             @RequestParam(name = "state", required = false) String state, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
@@ -55,7 +56,7 @@ public class BookingController {
     }
 
     @GetMapping("/owner")
-    public ResponseEntity<Collection<BookingDto>> getAllBookingsByOwner(
+    public ResponseEntity<Collection<BookingItemDto>> getAllBookingsByOwner(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
             @RequestParam(name = "state", required = false) String state, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());

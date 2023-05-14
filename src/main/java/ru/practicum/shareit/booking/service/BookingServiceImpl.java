@@ -1,36 +1,78 @@
 package ru.practicum.shareit.booking.service;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.dao.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingDtoValidator;
+import ru.practicum.shareit.booking.dto.BookingItemDto;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.constant.Status;
+import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.service.UserService;
 
+import java.security.InvalidParameterException;
 import java.util.Collection;
 
 @Service
 @Slf4j
-public class BookingServiceImpl implements BookingService{
+@AllArgsConstructor
+public class BookingServiceImpl implements BookingService {
+    private final BookingRepository bookingRepository;
+    private final UserService userService;
+    private final ItemService itemService;
+    private final BookingDtoValidator validator;
+
     @Override
-    public BookingDto create(long userId, BookingDto bookingDto) {
+    public BookingItemDto create(long userId, BookingDto bookingDto) {
+        User user;
+        Item item;
+        try {
+            user = UserMapper.toUser(userService.findUser(userId));
+        } catch (InvalidParameterException e) {
+            log.warn("Нельзя создать аренду для несуществующего пользователя с id = {}", userId);
+            throw new InvalidParameterException(
+                    String.format("Нельзя создать аренду для несуществующего пользователя с id = %d", userId));
+        }
+        try {
+            item = ItemMapper.toItem(itemService.findItemById(userId, bookingDto.getItemId()), user);
+        } catch (InvalidParameterException e) {
+            log.warn("Нельзя создать аренду для несуществующего вещи с id = {}", userId);
+            throw new InvalidParameterException(
+                    String.format("Нельзя создать аренду для несуществующего вещи с id = %d", userId));
+        }
+        if (!item.isAvailable()) throw new ValidationException("Вещь недоступна для аренды");
+        validator.validateBookingTime(bookingDto);
+        Booking saveBooking = bookingRepository.save(BookingMapper.toBooking(bookingDto, item, user, Status.WAITING));
+        return BookingMapper.toBookingItemDto(saveBooking);
+
+    }
+
+    @Override
+    public BookingItemDto approve(long userId, long bookingId, boolean approved) {
+
         return null;
     }
 
     @Override
-    public BookingDto approve(long userId, long bookingId, boolean approved) {
+    public BookingItemDto findBookingById(long userId, long bookingId) {
         return null;
     }
 
     @Override
-    public BookingDto findBookingById(long userId, long bookingId) {
+    public Collection<BookingItemDto> findAllBookingByUser(long userId, String state) {
         return null;
     }
 
     @Override
-    public Collection<BookingDto> findAllBookingByUser(long userId, String state) {
-        return null;
-    }
-
-    @Override
-    public Collection<BookingDto> findAllBookingsByOwner(long ownerId, String state) {
+    public Collection<BookingItemDto> findAllBookingsByOwner(long ownerId, String state) {
         return null;
     }
 }

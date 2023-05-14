@@ -20,6 +20,7 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
 import java.util.Collection;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -62,8 +63,16 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingItemDto findBookingById(long userId, long bookingId) {
-        return null;
+    public BookingItemDto findBookingById(long userId, long bookingId) throws InvalidParameterException {
+        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+        if (bookingOptional.isEmpty()) {
+            throw new InvalidParameterException("Аренда не найдена");
+        }
+        Booking booking = bookingOptional.get();
+        if (booking.getBooker().getId() != userId && booking.getItem().getOwner().getId() != userId) {
+            throw new InvalidParameterException("Искомая аренад недоступна для данного юзера");
+        }
+        return BookingMapper.toBookingItemDto(booking);
     }
 
     @Override

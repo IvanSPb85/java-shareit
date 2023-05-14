@@ -58,17 +58,19 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingItemDto approve(long userId, long bookingId, boolean approved) {
-
-        return null;
+        Booking booking = findBooking(bookingId);
+        if (booking.getItem().getOwner().getId() != userId) {
+            throw new InvalidParameterException("Данный пользователь не может поменять статус вещи!");
+        }
+        if (approved) {
+            booking.setStatus(Status.APPROVED);
+        } else booking.setStatus(Status.REJECTED);
+        return BookingMapper.toBookingItemDto(bookingRepository.save(booking));
     }
 
     @Override
     public BookingItemDto findBookingById(long userId, long bookingId) throws InvalidParameterException {
-        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
-        if (bookingOptional.isEmpty()) {
-            throw new InvalidParameterException("Аренда не найдена");
-        }
-        Booking booking = bookingOptional.get();
+        Booking booking = findBooking(bookingId);
         if (booking.getBooker().getId() != userId && booking.getItem().getOwner().getId() != userId) {
             throw new InvalidParameterException("Искомая аренад недоступна для данного юзера");
         }
@@ -83,5 +85,13 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Collection<BookingItemDto> findAllBookingsByOwner(long ownerId, String state) {
         return null;
+    }
+
+    private Booking findBooking(Long bookingId) {
+        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+        if (bookingOptional.isEmpty()) {
+            throw new InvalidParameterException("Аренда не найдена");
+        }
+        return bookingOptional.get();
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingItemDto;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.constant.State;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -50,7 +51,7 @@ public class BookingController {
     @GetMapping
     public ResponseEntity<Collection<BookingItemDto>> getAllBookingsByUser(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userid,
-            @RequestParam(name = "state", required = false) String state, HttpServletRequest request) {
+            @RequestParam(name = "state", defaultValue = "ALL") String state, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(bookingService.findAllBookingByUser(userid, state), HttpStatus.OK);
     }

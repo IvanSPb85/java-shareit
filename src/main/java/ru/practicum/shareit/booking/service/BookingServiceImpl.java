@@ -2,6 +2,7 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingMapper;
@@ -9,7 +10,9 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoValidator;
 import ru.practicum.shareit.booking.dto.BookingItemDto;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.constant.State;
 import ru.practicum.shareit.constant.Status;
+import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
@@ -19,8 +22,12 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -79,7 +86,42 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Collection<BookingItemDto> findAllBookingByUser(long userId, String state) {
-        return null;
+        userService.findUser(userId);
+        Collection<Booking> bookings = new ArrayList<>();
+        State currentState = getState(state);
+        switch (currentState) {
+            case ALL: {
+                bookings = bookingRepository.findAllByBookerIdOrderByStartDesc(userId);
+                break;
+            }
+            case CURRENT: {
+                bookings = bookingRepository.findAllByBookerIdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(),
+                        LocalDateTime.now(), Sort.by(Sort.Direction.DESC, "end"));
+                break;
+            }
+            case PAST: {
+                bookings = bookingRepository.findAllByBookerIdAndEndIsBefore(userId, LocalDateTime.now(),
+                        Sort.by(Sort.Direction.DESC, "end"));
+                break;
+            }
+            case FUTURE: {
+
+                bookings = bookingRepository.findAllByBookerIdAndStartIsAfter(userId, LocalDateTime.now(),
+                        Sort.by(Sort.Direction.DESC, "end"));
+                break;
+            }
+            case WAITING: {
+                bookings = bookingRepository.findAllByBookerIdAndStatus(userId, Status.WAITING,
+                        Sort.by(Sort.Direction.DESC, "end"));
+                break;
+            }
+            case REJECTED: {
+                bookings = bookingRepository.findAllByBookerIdAndStatus(userId, Status.REJECTED,
+                        Sort.by(Sort.Direction.DESC, "end"));
+                break;
+            }
+        }
+        return bookings.stream().map(BookingMapper::toBookingItemDto).collect(Collectors.toList());
     }
 
     @Override
@@ -93,5 +135,13 @@ public class BookingServiceImpl implements BookingService {
             throw new InvalidParameterException("Аренда не найдена");
         }
         return bookingOptional.get();
+    }
+
+    private State getState(String state) {
+        try {
+            return State.valueOf(state);
+        } catch (IllegalArgumentException e) {
+            throw new DataBaseException("Unknown state: UNSUPPORTED_STATUS");
+        }
     }
 }

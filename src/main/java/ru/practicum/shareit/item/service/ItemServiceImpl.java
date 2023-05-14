@@ -88,7 +88,8 @@ public class ItemServiceImpl implements ItemService {
         return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 
-    private Item findItem(long itemId) {
+    @Override
+    public Item findItem(long itemId) {
         Optional<Item> result = itemRepository.findById(itemId);
         if (result.isEmpty()) {
             log.info("Вещь с id = {} не найдена в базе.", itemId);

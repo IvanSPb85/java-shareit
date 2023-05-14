@@ -14,7 +14,6 @@ import ru.practicum.shareit.constant.State;
 import ru.practicum.shareit.constant.Status;
 import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.dto.UserMapper;
@@ -22,7 +21,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +48,7 @@ public class BookingServiceImpl implements BookingService {
                     String.format("Нельзя создать аренду для несуществующего пользователя с id = %d", userId));
         }
         try {
-            item = ItemMapper.toItem(itemService.findItemById(userId, bookingDto.getItemId()), user);
+            item = itemService.findItem(bookingDto.getItemId());
         } catch (InvalidParameterException e) {
             log.warn("Нельзя создать аренду для несуществующего вещи с id = {}", userId);
             throw new InvalidParameterException(
@@ -58,6 +56,8 @@ public class BookingServiceImpl implements BookingService {
         }
         if (!item.isAvailable()) throw new ValidationException("Вещь недоступна для аренды");
         validator.validateBookingTime(bookingDto);
+        if (item.getOwner().getId() == userId)
+            throw new InvalidParameterException("Пользователь не может аредновать свою вещь!");
         Booking saveBooking = bookingRepository.save(BookingMapper.toBooking(bookingDto, item, user, Status.WAITING));
         return BookingMapper.toBookingItemDto(saveBooking);
 
@@ -69,6 +69,8 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getItem().getOwner().getId() != userId) {
             throw new InvalidParameterException("Данный пользователь не может поменять статус вещи!");
         }
+        if (booking.getStatus().equals(Status.APPROVED))
+            throw new ValidationException("У аренды нельзя повторно поменять статус!");
         if (approved) {
             booking.setStatus(Status.APPROVED);
         } else booking.setStatus(Status.REJECTED);
@@ -126,7 +128,36 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Collection<BookingItemDto> findAllBookingsByOwner(long ownerId, String state) {
-        return null;
+        userService.findUser(ownerId);
+        Collection<Booking> bookings = new ArrayList<>();
+        State currentState = getState(state);
+        switch (currentState) {
+            case ALL: {
+                bookings = bookingRepository.findAllByOwner(ownerId);
+                break;
+            }
+            case CURRENT: {
+                bookings = bookingRepository.findAllByOwnerAndCurrentState(ownerId);
+                break;
+            }
+            case PAST: {
+                bookings = bookingRepository.findAllByOwnerAndPastState(ownerId);
+                break;
+            }
+            case FUTURE: {
+                bookings = bookingRepository.findAllByOwnerAndFutureState(ownerId);
+                break;
+            }
+            case WAITING: {
+                bookings = bookingRepository.findAllByOwnerAndWaitingState(ownerId, Status.WAITING);
+                break;
+            }
+            case REJECTED: {
+                bookings = bookingRepository.findAllByOwnerAndWaitingState(ownerId, Status.REJECTED);
+                break;
+            }
+        }
+        return bookings.stream().map(BookingMapper::toBookingItemDto).collect(Collectors.toList());
     }
 
     private Booking findBooking(Long bookingId) {

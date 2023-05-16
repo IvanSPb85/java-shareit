@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.ItemBookingsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
@@ -37,15 +38,15 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemDto> findItemById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+    public ResponseEntity<ItemBookingsDto> findItemById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
                                                 @PathVariable long itemId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemService.findItemById(userId, itemId), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<ItemDto>> findItemsByOwner(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                                HttpServletRequest request) {
+    public ResponseEntity<Collection<ItemBookingsDto>> findItemsByOwner(@RequestHeader(REQUEST_HEADER_USER_ID)
+                                                                        long userId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemService.findItemsByOwner(userId), HttpStatus.OK);
     }

@@ -3,13 +3,11 @@ package ru.practicum.shareit.booking.dao;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.constant.Status;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Collection<Booking> findAllByBookerIdOrderByStartDesc(long userId);
@@ -41,4 +39,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b where b.item.owner.id = ?1 and status = ?2" +
             " order by b.end desc ")
     Collection<Booking> findAllByOwnerAndWaitingState(long ownerId, Status status);
+
+    Collection<Booking> findAllByItemId(long itemId);
 }

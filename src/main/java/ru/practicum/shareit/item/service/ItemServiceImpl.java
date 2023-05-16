@@ -3,7 +3,12 @@ package ru.practicum.shareit.item.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.dao.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.dto.ShortBookingItemDto;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.dao.ItemRepository;
+import ru.practicum.shareit.item.dto.ItemBookingsDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
@@ -12,9 +17,8 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,6 +27,8 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserService userService;
+
+    private final BookingRepository bookingRepository;
 
     @Override
     public ItemDto create(long userId, ItemDto itemDto) {
@@ -63,17 +69,44 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto findItemById(long userId, long itemId) {
+    public ItemBookingsDto findItemById(long userId, long itemId) {
         Item item = findItem(itemId);
         log.info("По id = {} в базе найден(a) \"{}\".", item.getId(), item.getName());
-        return ItemMapper.toItemDto(item);
+        return addLastAndNextBookingsToItem(item, userId);
     }
 
     @Override
-    public Collection<ItemDto> findItemsByOwner(long userId) {
+    public Collection<ItemBookingsDto> findItemsByOwner(long userId) {
         Collection<Item> items = itemRepository.findAllByOwnerId(userId);
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
-        return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
+
+        return items.stream().map(item -> addLastAndNextBookingsToItem(item, userId)).collect(Collectors.toList());
+    }
+
+    private ItemBookingsDto addLastAndNextBookingsToItem(Item item, long userId) {
+        List<Booking> bookings = bookingRepository.findAllByItemId(item.getId())
+                .stream().sorted(Comparator.comparing(Booking::getStart)).collect(Collectors.toList());
+
+        List<Booking> reversedBookings = new ArrayList<>(bookings);
+        Collections.reverse(reversedBookings);
+
+        ShortBookingItemDto lastBooking = null;
+        ShortBookingItemDto nextBooking = null;
+        if (item.getOwner().getId() == userId) {
+
+            Optional<Booking> nextBookingOptional = bookings.stream()
+                    .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
+            Optional<Booking> lastBookingOptional = reversedBookings.stream()
+                    .dropWhile(booking -> booking.getEnd().isAfter(LocalDateTime.now())).findFirst();
+
+            if (lastBookingOptional.isPresent())
+                lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
+            if (nextBookingOptional.isPresent())
+                nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
+        }
+
+        return ItemMapper.toItemBookingsDto(
+                item, lastBooking, nextBooking);
     }
 
     @Override

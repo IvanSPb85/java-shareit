@@ -19,10 +19,14 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
     private String text;
+
     @ManyToOne
     private Item item;
+
     @ManyToOne
     private User author;
+
     LocalDateTime created;
 }

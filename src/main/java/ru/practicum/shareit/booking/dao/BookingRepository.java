@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.constant.Status;
-import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -43,5 +42,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Collection<Booking> findAllByItemIdAndStatus(long itemId, Status status);
 
-    boolean existsByBookerIdAndItemIdAndStatusAndEndIsBefore(long userId, long itemId, Status status, LocalDateTime dateTime);
+    boolean existsByBookerIdAndItemIdAndStatusAndEndIsBefore(long userId, long itemId, Status status,
+                                                             LocalDateTime dateTime);
 }

@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class OutComingCommentDto {
-    private long Id;
+    private long id;
     private String text;
     private String authorName;
     private LocalDateTime created;

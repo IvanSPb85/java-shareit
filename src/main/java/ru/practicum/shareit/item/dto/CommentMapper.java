@@ -18,7 +18,7 @@ public class CommentMapper {
 
     public static OutComingCommentDto toOutComingCommentDto(Comment comment) {
         return OutComingCommentDto.builder()
-                .Id(comment.getId())
+                .id(comment.getId())
                 .text(comment.getText())
                 .authorName(comment.getAuthor().getName())
                 .created(comment.getCreated()).build();

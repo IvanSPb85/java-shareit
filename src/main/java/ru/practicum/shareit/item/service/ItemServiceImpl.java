@@ -85,15 +85,14 @@ public class ItemServiceImpl implements ItemService {
     public ItemBookingsDto findItemById(long userId, long itemId) {
         Item item = findItem(itemId);
         log.info("По id = {} в базе найден(a) \"{}\".", item.getId(), item.getName());
-        return addLastAndNextBookingsToItem(item, userId);
+        return addLastAndNextBookingsToItem(List.of(item), userId).stream().findFirst().get();
     }
 
     @Override
     public Collection<ItemBookingsDto> findItemsByOwner(long userId) {
         Collection<Item> items = itemRepository.findAllByOwnerId(userId);
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
-
-        return items.stream().map(item -> addLastAndNextBookingsToItem(item, userId)).collect(Collectors.toList());
+        return addLastAndNextBookingsToItem(items, userId);
     }
 
     @Override
@@ -132,30 +131,41 @@ public class ItemServiceImpl implements ItemService {
         throw new ValidationException("У вещи нет подтверженного бронирования");
     }
 
-    private ItemBookingsDto addLastAndNextBookingsToItem(Item item, long userId) {
-        List<Booking> bookings = bookingRepository.findAllByItemIdAndStatus(item.getId(), Status.APPROVED)
-                .stream().sorted(Comparator.comparing(Booking::getStart)).collect(Collectors.toList());
+    private Collection<ItemBookingsDto> addLastAndNextBookingsToItem(Collection<Item> items, long userId) {
+        List<Long> itemIdList = new ArrayList<>();
+        items.forEach(item -> itemIdList.add(item.getId()));
+        Collection<Comment> allComments = commentRepository.findAllByItemIdIn(itemIdList);
+        Collection<Booking> allBookings = bookingRepository.findAllByItemIdInAndStatus(itemIdList, Status.APPROVED);
+        Collection<ItemBookingsDto> itemBookingsDtos = new ArrayList<>();
 
-        List<Booking> reversedBookings = new ArrayList<>(bookings);
-        Collections.reverse(reversedBookings);
+        items.stream().forEach(item -> {
+            Collection<OutComingCommentDto> comments = allComments.stream().
+                    filter(comment -> comment.getItem().equals(item)).map(
+                            CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
 
-        ShortBookingItemDto lastBooking = null;
-        ShortBookingItemDto nextBooking = null;
-        Collection<OutComingCommentDto> comments = commentRepository.findAllByItemId(item.getId()).stream().map(
-                CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
-        if (item.getOwner().getId() == userId) {
-            Optional<Booking> nextBookingOptional = bookings.stream()
-                    .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
-            Optional<Booking> lastBookingOptional = reversedBookings.stream()
-                    .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
+            List<Booking> bookings = allBookings.stream().filter(booking -> booking.getItem().equals(item))
+                    .sorted(Comparator.comparing(Booking::getStart)).collect(Collectors.toList());
+            List<Booking> reversedBookings = new ArrayList<>(bookings);
+            Collections.reverse(reversedBookings);
 
-            if (lastBookingOptional.isPresent())
-                lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
-            if (nextBookingOptional.isPresent())
-                nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
-        }
+            ShortBookingItemDto lastBooking = null;
+            ShortBookingItemDto nextBooking = null;
 
-        return ItemMapper.toItemBookingsDto(
-                item, lastBooking, nextBooking, comments);
+            if (item.getOwner().getId() == userId) {
+                Optional<Booking> nextBookingOptional = bookings.stream()
+                        .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
+                Optional<Booking> lastBookingOptional = reversedBookings.stream()
+                        .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
+
+                if (lastBookingOptional.isPresent())
+                    lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
+                if (nextBookingOptional.isPresent())
+                    nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
+            }
+            itemBookingsDtos.add(ItemMapper.toItemBookingsDto(
+                    item, lastBooking, nextBooking, comments));
+
+        });
+        return itemBookingsDtos;
     }
 }

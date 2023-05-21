@@ -139,9 +139,9 @@ public class ItemServiceImpl implements ItemService {
         Collection<ItemBookingsDto> itemBookingsDtos = new ArrayList<>();
 
         items.stream().forEach(item -> {
-            Collection<OutComingCommentDto> comments = allComments.stream().
-                    filter(comment -> comment.getItem().equals(item)).map(
-                            CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
+            Collection<OutComingCommentDto> comments = allComments.stream()
+                    .filter(comment -> comment.getItem().equals(item))
+                    .map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
 
             List<Booking> bookings = allBookings.stream().filter(booking -> booking.getItem().equals(item))
                     .sorted(Comparator.comparing(Booking::getStart)).collect(Collectors.toList());

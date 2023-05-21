@@ -11,7 +11,12 @@ import ru.practicum.shareit.constant.Status;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dao.CommentRepository;
 import ru.practicum.shareit.item.dao.ItemRepository;
-import ru.practicum.shareit.item.dto.*;
+import ru.practicum.shareit.item.dto.CommentMapper;
+import ru.practicum.shareit.item.dto.InComingCommentDto;
+import ru.practicum.shareit.item.dto.ItemBookingsDto;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.dto.OutComingCommentDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dto.UserDto;
@@ -21,7 +26,12 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.security.InvalidParameterException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,10 +54,10 @@ public class ItemServiceImpl implements ItemService {
                     String.format("Нельзя сохранить вещь для несуществующего пользователя с id = %d", userId));
         }
         Item item = ItemMapper.toItem(itemDto, user);
-        Item savaItem = itemRepository.save(item);
+        Item saveItem = itemRepository.save(item);
         log.info("\"{}\" с id = {} успешно сохранена в базе.",
-                savaItem.getName(), savaItem.getId());
-        return ItemMapper.toItemDto(savaItem);
+                saveItem.getName(), saveItem.getId());
+        return ItemMapper.toItemDto(saveItem);
     }
 
     @Override

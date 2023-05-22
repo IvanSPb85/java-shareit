@@ -2,10 +2,11 @@ package ru.practicum.shareit.user.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.DataBaseException;
+import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserMapper;
-import ru.practicum.shareit.user.dao.UserStorage;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 
@@ -18,30 +19,28 @@ import java.util.stream.Collectors;
 @Slf4j
 @AllArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final UserStorage userStorage;
+    private final UserRepository userRepository;
 
     public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
-        if (userStorage.isExistEmail(user.getEmail())) {
+        User saveUser;
+        try {
+            saveUser = userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Пользователь с email = {} уже существует.", user.getEmail());
             throw new DataBaseException(String.format("Пользователь с email = %s уже существует.",
                     user.getEmail()));
         }
-        Optional<User> result = userStorage.save(user);
-        if (result.isPresent()) {
-            log.info("Пользователь с id = {} и email = {} успешно создан.",
-                    result.get().getId(), result.get().getEmail());
-            return UserMapper.toUserDto(result.get());
-        }
-        throw new DataBaseException("Ошибка базы данных при создании пользователя.");
+        log.info("Пользователь с id = {} и email = {} успешно создан.",
+                saveUser.getId(), saveUser.getEmail());
+        return UserMapper.toUserDto(saveUser);
     }
 
     public UserDto updateUser(long userId, UserDto userDto) {
         User updatingUser = UserMapper.toUser(findUser(userId));
         User user = UserMapper.toUser(userDto);
         if (user.getEmail() != null) {
-            Collection<String> checkEmails = userStorage.getAllEmails();
-            checkEmails.remove(userStorage.getUser(userId).get().getEmail());
-            if (userStorage.isExistEmail(user.getEmail())) {
+            if (userRepository.existsByEmail(user.getEmail()) && !user.getEmail().equals(updatingUser.getEmail())) {
                 log.warn("Невозможно обновить пользователя с email = {}, т.к. уже существует другой пользователь с " +
                         "таким email", user.getEmail());
                 throw new DataBaseException(String.format("Невозможно обновить пользователя с email = %s," +
@@ -52,17 +51,15 @@ public class UserServiceImpl implements UserService {
         if (user.getName() != null) {
             updatingUser.setName(user.getName());
         }
-        Optional<User> result = userStorage.update(updatingUser);
-        if (result.isPresent()) {
-            log.info("Пользователь с id = {} успешно обновлен.", result.get().getId());
-            return UserMapper.toUserDto(result.get());
-        }
-        throw new DataBaseException("Ошибка базы данных при обновлении пользователя.");
+        User saveUser = userRepository.save(updatingUser);
+        log.info("Пользователь с id = {} успешно обновлен.", saveUser.getId());
+        return UserMapper.toUserDto(saveUser);
     }
 
     public UserDto findUser(long userId) {
-        Optional<User> result = userStorage.getUser(userId);
+        Optional<User> result = userRepository.findById(userId);
         if (result.isEmpty()) {
+            log.warn("Пользователь с id = {} не найден.", userId);
             throw new InvalidParameterException(String.format("Пользователь с id = %d не найден.", userId));
         }
         log.info("Пользователь с id = {} найден.", result.get().getId());
@@ -71,14 +68,14 @@ public class UserServiceImpl implements UserService {
     }
 
     public Collection<UserDto> findAll() {
-        Collection<User> users = userStorage.getAllUsers();
+        Collection<User> users = userRepository.findAll();
         log.info("Найдено {} пользователей.", users.size());
         return users.stream().map(UserMapper::toUserDto).collect(Collectors.toList());
     }
 
     public void deleteUser(long userId) {
-        if (userStorage.isExistUser(userId)) {
-            userStorage.removeUser(userId);
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
             log.info("Пользователь с id = {} успешно удален.", userId);
         } else {
             log.warn("Удаление пользователя с id = {} неосуществимо, т.к. данный пользователь не найден.", userId);

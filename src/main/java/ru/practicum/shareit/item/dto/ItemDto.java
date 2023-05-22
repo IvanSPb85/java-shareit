@@ -11,10 +11,10 @@ import javax.validation.constraints.NotNull;
 @Data
 public class ItemDto {
     private long id;
-    @Length(max = 50)
+    @Length(max = 255)
     @NotBlank
     private String name;
-    @Length(max = 200)
+    @Length(max = 2000)
     @NotBlank
     private String description;
     @NotNull

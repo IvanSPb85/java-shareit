@@ -51,7 +51,7 @@ public class ItemRequestController {
             @RequestParam(required = false) Integer from,
             @RequestParam(required = false) Integer size, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemRequestService.getAllRequests(userId, from, size), HttpStatus.OK);
+        return new ResponseEntity<>(itemRequestService.getAllRequestsPagination(userId, from, size), HttpStatus.OK);
     }
 
     @GetMapping("/{requestId}")

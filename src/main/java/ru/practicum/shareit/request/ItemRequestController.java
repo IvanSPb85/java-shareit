@@ -31,9 +31,10 @@ public class ItemRequestController {
     private final ItemRequestService itemRequestService;
 
     @PostMapping
-    public ResponseEntity<ItemRequestDto> create(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                 @RequestBody @Valid ItemRequestDto itemRequestDto,
-                                                 HttpServletRequest request) {
+    public ResponseEntity<ItemRequestDto> create(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @RequestBody @Valid ItemRequestDto itemRequestDto,
+            HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemRequestService.create(userId, itemRequestDto), HttpStatus.OK);
     }
@@ -48,15 +49,16 @@ public class ItemRequestController {
     @GetMapping("/all")
     public ResponseEntity<Collection<ItemRequestDto>> getAllRequests(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-            @RequestParam(required = false) Integer from,
-            @RequestParam(required = false) Integer size, HttpServletRequest request) {
+            @RequestParam(required = false, defaultValue = "0") Integer from,
+            @RequestParam(required = false, defaultValue = "20") Integer size, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemRequestService.getAllRequests(userId, from, size), HttpStatus.OK);
+        return new ResponseEntity<>(itemRequestService.getAllRequestsPagination(userId, from, size), HttpStatus.OK);
     }
 
     @GetMapping("/{requestId}")
-    public ResponseEntity<ItemRequestDto> getRequestById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                         @PathVariable long requestId, HttpServletRequest request) {
+    public ResponseEntity<ItemRequestDto> getRequestById(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @PathVariable long requestId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemRequestService.getRequestById(userId, requestId), HttpStatus.OK);
     }

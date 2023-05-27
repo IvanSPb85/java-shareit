@@ -2,6 +2,7 @@ package ru.practicum.shareit.request.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,26 +48,37 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public Collection<ItemRequestDto> getOwnRequests(long userId) {
-        User user = UserMapper.toUser(userService.findUser(userId));
+        userService.findUser(userId);
         Collection<ItemRequest> requests = itemRequestRepository.findAllByRequestorIdOrderByCreatedDesc(userId);
-        List<Long> requestIdList = new ArrayList<>();
-        requests.forEach(itemRequest -> requestIdList.add(itemRequest.getId()));
-        Collection<Item> items = itemRepository.findAllByRequestIdIn(requestIdList);
         return requests.stream()
-                .map(itemRequest -> addItemsToItemRequest(itemRequest, items)).collect(Collectors.toList());
+                .map(itemRequest -> addItemsToItemRequest(requests, itemRequest)).collect(Collectors.toList());
     }
 
     @Override
-    public Collection<ItemRequestDto> getAllRequests(long userId, Integer from, Integer size) {
-        return null;
+    public Collection<ItemRequestDto> getAllRequestsPagination(long requestorId, Integer from, Integer size) {
+        if (from > 0 && size > 0) from = from / size;
+        Collection<ItemRequest> requests = itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(
+                requestorId, PageRequest.of(from, size));
+        return requests.stream()
+                .map(itemRequest -> addItemsToItemRequest(requests, itemRequest)).collect(Collectors.toList());
     }
 
     @Override
     public ItemRequestDto getRequestById(long userId, long requestId) {
-        return null;
+        userService.findUser(userId);
+        Optional<ItemRequest> requestOptional = itemRequestRepository.findById(requestId);
+        if (requestOptional.isEmpty()) {
+            throw new InvalidParameterException(String.format("Запрос с id = %d не найден.", requestId));
+        }
+        Collection<Item> items = itemRepository.findAllByRequestIdIn(List.of(requestId));
+        return ItemRequestMapper.toItemRequestDto(requestOptional.get(), items);
     }
 
-    private ItemRequestDto addItemsToItemRequest(ItemRequest itemRequest, Collection<Item> items) {
+    private ItemRequestDto addItemsToItemRequest(Collection<ItemRequest> requests, ItemRequest itemRequest) {
+        List<Long> requestIdList = new ArrayList<>();
+        requests.forEach(itemRequest1 -> requestIdList.add(itemRequest1.getId()));
+        Collection<Item> items = itemRepository.findAllByRequestIdIn(requestIdList);
+
         List<Item> itemsByItemRequest = items.stream()
                 .filter(item -> item.getRequestId() == itemRequest.getId()).collect(Collectors.toList());
         return ItemRequestMapper.toItemRequestDto(itemRequest, itemsByItemRequest);

@@ -56,14 +56,9 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public Collection<ItemRequestDto> getAllRequestsPagination(long requestorId, Integer from, Integer size) {
-        Collection<ItemRequest> requests;
-        if (from != null && size != null) {
-            if (from > 0 && size > 0) from = (from / size) + 1;
-            requests = itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(
-                    requestorId, PageRequest.of(from, size));
-        } else {
-            requests = itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(requestorId);
-        }
+        if (from > 0 && size > 0) from = from / size;
+        Collection<ItemRequest> requests = itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(
+                requestorId, PageRequest.of(from, size));
         return requests.stream()
                 .map(itemRequest -> addItemsToItemRequest(requests, itemRequest)).collect(Collectors.toList());
     }

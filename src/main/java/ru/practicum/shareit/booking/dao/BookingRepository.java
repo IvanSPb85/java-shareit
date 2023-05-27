@@ -1,6 +1,6 @@
 package ru.practicum.shareit.booking.dao;
 
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.booking.model.Booking;
@@ -11,35 +11,35 @@ import java.util.Collection;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    Collection<Booking> findAllByBookerIdOrderByStartDesc(long userId);
+    List<Booking> findAllByBookerIdOrderByStartDesc(long userId, Pageable pageable);
 
-    Collection<Booking> findAllByBookerIdAndStartIsBeforeAndEndIsAfter(
-            long userId, LocalDateTime start, LocalDateTime end, Sort sort);
+    List<Booking> findAllByBookerIdAndStartIsBeforeAndEndIsAfter(
+            long userId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
-    Collection<Booking> findAllByBookerIdAndEndIsBefore(long userId, LocalDateTime end, Sort sort);
+    List<Booking> findAllByBookerIdAndEndIsBefore(long userId, LocalDateTime end, Pageable pageable);
 
-    Collection<Booking> findAllByBookerIdAndStartIsAfter(long userId, LocalDateTime after, Sort sort);
+    List<Booking> findAllByBookerIdAndStartIsAfter(long userId, LocalDateTime after, Pageable pageable);
 
-    Collection<Booking> findAllByBookerIdAndStatus(long userId, Status status, Sort sort);
+    List<Booking> findAllByBookerIdAndStatus(long userId, Status status, Pageable pageable);
 
     @Query("select b from Booking b where b.item.owner.id = ?1 order by b.start desc")
-    Collection<Booking> findAllByOwner(long ownerId);
+    List<Booking> findAllByOwner(long ownerId, Pageable pageable);
 
     @Query("select b from Booking b where b.item.owner.id = ?1 and current_timestamp between b.start and b.end" +
             " order by b.end desc ")
-    Collection<Booking> findAllByOwnerAndCurrentState(long ownerId);
+    List<Booking> findAllByOwnerAndCurrentState(long ownerId, Pageable pageable);
 
     @Query("select b from Booking b where b.item.owner.id = ?1 and b.end < current_timestamp" +
             " order by b.end desc ")
-    Collection<Booking> findAllByOwnerAndPastState(long ownerId);
+    List<Booking> findAllByOwnerAndPastState(long ownerId, Pageable pageable);
 
     @Query("select b from Booking b where b.item.owner.id = ?1 and b.start > current_timestamp" +
             " order by b.end desc ")
-    Collection<Booking> findAllByOwnerAndFutureState(long ownerId);
+    List<Booking> findAllByOwnerAndFutureState(long ownerId, Pageable pageable);
 
     @Query("select b from Booking b where b.item.owner.id = ?1 and status = ?2" +
             " order by b.end desc ")
-    Collection<Booking> findAllByOwnerAndWaitingState(long ownerId, Status status);
+    List<Booking> findAllByOwnerAndWaitingState(long ownerId, Status status, Pageable pageable);
 
     Collection<Booking> findAllByItemIdAndStatus(long itemId, Status status);
 

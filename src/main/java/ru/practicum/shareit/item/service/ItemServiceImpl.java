@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingMapper;
@@ -89,19 +90,21 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemBookingsDto> findItemsByOwner(long userId) {
-        Collection<Item> items = itemRepository.findAllByOwnerId(userId);
+    public Collection<ItemBookingsDto> findItemsByOwner(long userId, Integer from, Integer size) {
+        if (from > 0 && size > 0) from = from / size;
+        Collection<Item> items = itemRepository.findAllByOwnerId(userId, PageRequest.of(from, size));
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
         return addLastAndNextBookingsToItem(items, userId);
     }
 
     @Override
-    public Collection<ItemDto> findItemForRent(long userId, String itemName) {
+    public Collection<ItemDto> findItemForRent(long userId, String itemName, Integer from, Integer size) {
         if (itemName.isBlank()) {
             log.info("При поиске вещи по названию получена пустая строка в запросе. Возвращен пустой список.");
             return Collections.emptyList();
         }
-        Collection<Item> items = itemRepository.search(itemName);
+        if (from > 0 && size > 0) from = from / size;
+        Collection<Item> items = itemRepository.search(itemName, PageRequest.of(from, size));
         log.info("По запросу пользователя с id = {} найдено {} вещей с названием \"{}\".",
                 userId, items.size(), itemName);
         return items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList());

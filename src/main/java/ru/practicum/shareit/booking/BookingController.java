@@ -20,6 +20,7 @@ import ru.practicum.shareit.booking.service.BookingService;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 import static ru.practicum.shareit.constant.Constant.*;
@@ -66,7 +67,8 @@ public class BookingController {
             @RequestParam(required = false, defaultValue = "0") Integer from,
             @RequestParam(required = false, defaultValue = "20") Integer size, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(bookingService.findAllBookingByUser(userid, state, from, size), HttpStatus.OK);
+        return new ResponseEntity<>(bookingService.findAllBookingByUser(
+                userid, state, from, size, LocalDateTime.now()), HttpStatus.OK);
     }
 
     @GetMapping("/owner")
@@ -76,6 +78,7 @@ public class BookingController {
             @RequestParam(required = false, defaultValue = "0") Integer from,
             @RequestParam(required = false, defaultValue = "20") Integer size, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(bookingService.findAllBookingsByOwner(userId, state, from, size), HttpStatus.OK);
+        return new ResponseEntity<>(bookingService.findAllBookingsByOwner(userId, state.toUpperCase(), from, size),
+                HttpStatus.OK);
     }
 }

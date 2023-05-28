@@ -7,8 +7,9 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
-import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.dto.ItemRequestIncomingDto;
 import ru.practicum.shareit.request.dto.ItemRequestMapper;
+import ru.practicum.shareit.request.dto.ItemRequestOutComingDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -31,7 +32,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     private final ItemRepository itemRepository;
 
     @Override
-    public ItemRequestDto create(long userId, ItemRequestDto itemRequestDto) {
+    public ItemRequestOutComingDto create(long userId, ItemRequestIncomingDto itemRequestIncomingDto) {
         User user;
         try {
             user = UserMapper.toUser(userService.findUser(userId));
@@ -40,14 +41,14 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             throw new InvalidParameterException(
                     String.format("Нельзя создать запрос от несуществующего пользователя с id = %d", userId));
         }
-        ItemRequest itemRequest = ItemRequestMapper.toItemRequest(itemRequestDto, user);
+        ItemRequest itemRequest = ItemRequestMapper.toItemRequest(itemRequestIncomingDto, user);
         ItemRequest saveItemRequest = itemRequestRepository.save(itemRequest);
         log.info("Запрос c id = {} успешно сохранен в базе данных.", saveItemRequest.getId());
-        return ItemRequestMapper.toItemRequestDto(saveItemRequest, Collections.emptyList());
+        return ItemRequestMapper.toItemRequestOutcomingDto(saveItemRequest, Collections.emptyList());
     }
 
     @Override
-    public Collection<ItemRequestDto> getOwnRequests(long userId) {
+    public Collection<ItemRequestOutComingDto> getOwnRequests(long userId) {
         userService.findUser(userId);
         Collection<ItemRequest> requests = itemRequestRepository.findAllByRequestorIdOrderByCreatedDesc(userId);
         return requests.stream()
@@ -55,7 +56,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     @Override
-    public Collection<ItemRequestDto> getAllRequestsPagination(long requestorId, Integer from, Integer size) {
+    public Collection<ItemRequestOutComingDto> getAllRequestsPagination(long requestorId, Integer from, Integer size) {
         if (from > 0 && size > 0) from = from / size;
         Collection<ItemRequest> requests = itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(
                 requestorId, PageRequest.of(from, size));
@@ -64,23 +65,23 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     @Override
-    public ItemRequestDto getRequestById(long userId, long requestId) {
+    public ItemRequestOutComingDto getRequestById(long userId, long requestId) {
         userService.findUser(userId);
         Optional<ItemRequest> requestOptional = itemRequestRepository.findById(requestId);
         if (requestOptional.isEmpty()) {
             throw new InvalidParameterException(String.format("Запрос с id = %d не найден.", requestId));
         }
         Collection<Item> items = itemRepository.findAllByRequestIdIn(List.of(requestId));
-        return ItemRequestMapper.toItemRequestDto(requestOptional.get(), items);
+        return ItemRequestMapper.toItemRequestOutcomingDto(requestOptional.get(), items);
     }
 
-    private ItemRequestDto addItemsToItemRequest(Collection<ItemRequest> requests, ItemRequest itemRequest) {
+    private ItemRequestOutComingDto addItemsToItemRequest(Collection<ItemRequest> requests, ItemRequest itemRequest) {
         List<Long> requestIdList = new ArrayList<>();
         requests.forEach(itemRequest1 -> requestIdList.add(itemRequest1.getId()));
         Collection<Item> items = itemRepository.findAllByRequestIdIn(requestIdList);
 
         List<Item> itemsByItemRequest = items.stream()
                 .filter(item -> item.getRequestId() == itemRequest.getId()).collect(Collectors.toList());
-        return ItemRequestMapper.toItemRequestDto(itemRequest, itemsByItemRequest);
+        return ItemRequestMapper.toItemRequestOutcomingDto(itemRequest, itemsByItemRequest);
     }
 }

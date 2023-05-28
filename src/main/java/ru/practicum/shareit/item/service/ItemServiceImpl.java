@@ -125,7 +125,7 @@ public class ItemServiceImpl implements ItemService {
         UserDto authorDto = userService.findUser(userId);
         Item item = findItem(itemId);
         if (bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndIsBefore(
-                userId, itemId, Status.APPROVED, LocalDateTime.now())) {
+                userId, itemId, Status.APPROVED, inComingCommentDto.getCreated())) {
             Comment savedComment = commentRepository.save(
                     CommentMapper.toComment(inComingCommentDto, UserMapper.toUser(authorDto), item));
             return CommentMapper.toOutComingCommentDto(savedComment);
@@ -141,7 +141,7 @@ public class ItemServiceImpl implements ItemService {
         Collection<Booking> allBookings = bookingRepository.findAllByItemIdInAndStatus(itemIdList, Status.APPROVED);
         Collection<ItemBookingsDto> itemBookingsDtos = new ArrayList<>();
 
-        items.stream().forEach(item -> {
+        items.forEach(item -> {
             Collection<OutComingCommentDto> comments = allComments.stream()
                     .filter(comment -> comment.getItem().equals(item))
                     .map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList());

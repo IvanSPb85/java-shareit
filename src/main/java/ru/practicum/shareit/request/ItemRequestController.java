@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.dto.ItemRequestIncomingDto;
+import ru.practicum.shareit.request.dto.ItemRequestOutComingDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,23 +32,23 @@ public class ItemRequestController {
     private final ItemRequestService itemRequestService;
 
     @PostMapping
-    public ResponseEntity<ItemRequestDto> create(
+    public ResponseEntity<ItemRequestOutComingDto> create(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-            @RequestBody @Valid ItemRequestDto itemRequestDto,
+            @RequestBody @Valid ItemRequestIncomingDto itemRequestIncomingDto,
             HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemRequestService.create(userId, itemRequestDto), HttpStatus.OK);
+        return new ResponseEntity<>(itemRequestService.create(userId, itemRequestIncomingDto), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<ItemRequestDto>> getOwnRequests(
+    public ResponseEntity<Collection<ItemRequestOutComingDto>> getOwnRequests(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemRequestService.getOwnRequests(userId), HttpStatus.OK);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Collection<ItemRequestDto>> getAllRequests(
+    public ResponseEntity<Collection<ItemRequestOutComingDto>> getAllRequests(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
             @RequestParam(required = false, defaultValue = "0") Integer from,
             @RequestParam(required = false, defaultValue = "20") Integer size, HttpServletRequest request) {
@@ -56,7 +57,7 @@ public class ItemRequestController {
     }
 
     @GetMapping("/{requestId}")
-    public ResponseEntity<ItemRequestDto> getRequestById(
+    public ResponseEntity<ItemRequestOutComingDto> getRequestById(
             @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
             @PathVariable long requestId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());

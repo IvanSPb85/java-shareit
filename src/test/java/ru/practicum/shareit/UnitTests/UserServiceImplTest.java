@@ -36,7 +36,7 @@ class UserServiceImplTest {
     @Test
     void create_whenDuplicateEmail_thenDataBaseExceptionThrown() {
         User user = UserMapper.toUser(userDto);
-        when(userRepository.save(user)).thenThrow(new DataIntegrityViolationException(""));
+        when(userRepository.save(user)).thenThrow(DataIntegrityViolationException.class);
 
         DataBaseException dataBaseException = assertThrows(DataBaseException.class,
                 () -> userService.create(userDto));

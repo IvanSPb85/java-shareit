@@ -53,7 +53,7 @@ class ItemRequestControllerTest {
             .description("desc")
             .created(LocalDateTime.now()).build();
     private static final long userId = 1L;
-    ItemRequestOutComingDto itemRequestOutComingDto = ItemRequestMapper
+    private final ItemRequestOutComingDto itemRequestOutComingDto = ItemRequestMapper
             .toItemRequestOutcomingDto(itemRequest, Collections.emptyList());
 
     @SneakyThrows

@@ -19,11 +19,13 @@ import ru.practicum.shareit.booking.service.BookingService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 
-import static ru.practicum.shareit.constant.Constant.*;
+import static ru.practicum.shareit.constant.Constant.REQUEST_GET_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_HEADER_USER_ID;
+import static ru.practicum.shareit.constant.Constant.REQUEST_PATCH_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_POST_LOG;
 
 
 @Slf4j

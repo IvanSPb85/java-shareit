@@ -41,8 +41,8 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
-    private final static UserDto userDto = new UserDto(1L, "user", "user@mail");
-    private final static long userId = 1L;
+    private static final UserDto userDto = new UserDto(1L, "user", "user@mail");
+    private static final long userId = 1L;
 
 
     @SneakyThrows

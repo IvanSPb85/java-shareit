@@ -1,15 +1,14 @@
 package ru.practicum.shareit.UnitTests;
 
-import lombok.AllArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoValidator;
 import ru.practicum.shareit.exception.ValidationException;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BookingDtoValidatorTest {
     BookingDtoValidator validator = new BookingDtoValidator();

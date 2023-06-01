@@ -29,7 +29,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -375,9 +377,5 @@ class BookingServiceImplTest {
                 user.getId(), "REJECTED", 1, 1);
 
         assertArrayEquals(List.of(BookingMapper.toBookingItemDto(booking)).toArray(), actual.toArray());
-    }
-
-    @Test
-    void findAllBookingsByOwner() {
     }
 }

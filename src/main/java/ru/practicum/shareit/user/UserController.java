@@ -17,10 +17,12 @@ import ru.practicum.shareit.user.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import java.util.Collection;
 
-import static ru.practicum.shareit.constant.Constant.*;
+import static ru.practicum.shareit.constant.Constant.REQUEST_DELETE_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_GET_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_PATCH_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_POST_LOG;
 
 @Slf4j
 @RequiredArgsConstructor

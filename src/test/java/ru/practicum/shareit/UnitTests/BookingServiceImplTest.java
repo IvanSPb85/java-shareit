@@ -378,8 +378,4 @@ class BookingServiceImplTest {
 
         assertArrayEquals(List.of(BookingMapper.toBookingItemDto(booking)).toArray(), actual.toArray());
     }
-
-    @Test
-    void findAllBookingsByOwner() {
-    }
 }

@@ -12,7 +12,7 @@ public class CommentMapper {
                 .text(inComingCommentDto.getText())
                 .author(author)
                 .item(item)
-                .created(LocalDateTime.now()).build();
+                .created(inComingCommentDto.getCreated()).build();
 
     }
 

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoValidator;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @Slf4j
 @AllArgsConstructor
 public class BookingServiceImpl implements BookingService {
@@ -38,6 +40,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingDtoValidator validator;
 
     @Override
+    @Transactional
     public BookingItemDto create(long userId, BookingDto bookingDto) {
         User user;
         Item item;
@@ -65,6 +68,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public BookingItemDto approve(long userId, long bookingId, boolean approved) {
         Booking booking = findBooking(bookingId);
         if (booking.getItem().getOwner().getId() != userId) {

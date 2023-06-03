@@ -1,4 +1,4 @@
-package ru.practicum.shareit.UnitTests;
+package ru.practicum.shareit.UnitTests.BookingTests;
 
 import org.junit.jupiter.api.Test;
 import ru.practicum.shareit.booking.dto.BookingDto;

@@ -1,4 +1,4 @@
-package ru.practicum.shareit.UnitTests;
+package ru.practicum.shareit.UnitTests.ItemTests;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -110,9 +110,6 @@ class ItemServiceImplTest {
     @Test
     void findItemById_whenItemFound_thenReturnedItemBookingsDto() {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
-        when(commentRepository.findAllByItemIdIn(List.of(item.getId()))).thenReturn(Collections.emptyList());
-        when(bookingRepository.findAllByItemIdInAndStatus(List.of(item.getId()), Status.APPROVED))
-                .thenReturn(Collections.emptyList());
 
         ItemBookingsDto actual = itemService.findItemById(user.getId(), itemDto.getId());
 

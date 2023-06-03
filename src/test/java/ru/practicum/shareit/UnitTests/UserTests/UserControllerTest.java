@@ -1,4 +1,4 @@
-package ru.practicum.shareit.UnitTests.ControllerTests;
+package ru.practicum.shareit.UnitTests.UserTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;

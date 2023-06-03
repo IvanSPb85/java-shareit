@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.dto.ShortBookingItemDto;
@@ -30,12 +31,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Transactional(readOnly = true)
 @Service
 @AllArgsConstructor
 public class ItemServiceImpl implements ItemService {
@@ -45,6 +46,7 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
 
     @Override
+    @Transactional
     public ItemDto create(long userId, ItemDto itemDto) {
         User user;
         try {
@@ -62,6 +64,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public ItemDto update(long userId, long itemId, ItemDto itemDto) {
         Item foundItem = findItem(itemId);
         if (foundItem.getOwner().getId() != userId) {
@@ -86,15 +89,29 @@ public class ItemServiceImpl implements ItemService {
     public ItemBookingsDto findItemById(long userId, long itemId) {
         Item item = findItem(itemId);
         log.info("По id = {} в базе найден(a) \"{}\".", item.getId(), item.getName());
-        return addLastAndNextBookingsToItem(List.of(item), userId).stream().findFirst().get();
+        // находим в базе Список Отзывов по вещи
+        Collection<Comment> allComments = commentRepository.findAllByItemId(itemId);
+        // если пользователь является владельцем вещи,
+        if (item.getOwner().getId() == userId) {
+            // находим в базе отсортированный по времени Список одобренных Бронирований по вещи
+            Collection<Booking> bookings = bookingRepository
+                    .findAllByItemIdAndStatusOrderByStartAsc(itemId, Status.APPROVED);
+            // то добавляем к вещи отзывы и бронирования
+            return addLastAndNextBookingToItem(allComments, bookings, item);
+        }
+        // иначе добавляем к вещи только отзывы
+        return ItemMapper.toItemBookingsDto(item, null, null,
+                allComments.stream().map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList()));
     }
 
     @Override
     public Collection<ItemBookingsDto> findItemsByOwner(long userId, Integer from, Integer size) {
         if (from > 0 && size > 0) from = from / size;
+        // находим в базе Список Вещей пользователя
         Collection<Item> items = itemRepository.findAllByOwnerId(userId, PageRequest.of(from, size));
         log.info("У пользователя с id = {} найдено {} вещей.", userId, items.size());
-        return addLastAndNextBookingsToItem(items, userId);
+        // добавляем к вещам Отзывы и бронирования
+        return addDataToItems(items);
     }
 
     @Override
@@ -121,6 +138,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public OutComingCommentDto createComment(long userId, long itemId, InComingCommentDto inComingCommentDto) {
         UserDto authorDto = userService.findUser(userId);
         Item item = findItem(itemId);
@@ -130,45 +148,59 @@ public class ItemServiceImpl implements ItemService {
                     CommentMapper.toComment(inComingCommentDto, UserMapper.toUser(authorDto), item));
             return CommentMapper.toOutComingCommentDto(savedComment);
         }
-
         throw new ValidationException("У вещи нет подтверженного бронирования");
     }
 
-    private Collection<ItemBookingsDto> addLastAndNextBookingsToItem(Collection<Item> items, long userId) {
+    private Collection<ItemBookingsDto> addDataToItems(Collection<Item> items) {
+        // формируем Список Идентификаторов вещей
         List<Long> itemIdList = new ArrayList<>();
         items.forEach(item -> itemIdList.add(item.getId()));
+        // получаем из базы данных Список всех Отзывов согласно списку идентификаторов
         Collection<Comment> allComments = commentRepository.findAllByItemIdIn(itemIdList);
-        Collection<Booking> allBookings = bookingRepository.findAllByItemIdInAndStatus(itemIdList, Status.APPROVED);
+        // получаем из базы данных отсортированный по времени
+        // Список всех одобренных Бронирований согласно списку идентификаторов
+        Collection<Booking> allBookings = bookingRepository
+                .findAllByItemIdInAndStatusOrderByStartAsc(itemIdList, Status.APPROVED);
+        // создаем Новый пустой Список Вещей с отзывами и бронированиями
         Collection<ItemBookingsDto> itemBookingsDtos = new ArrayList<>();
-
+        // для каждой вещи:
         items.forEach(item -> {
-            Collection<OutComingCommentDto> comments = allComments.stream()
-                    .filter(comment -> comment.getItem().equals(item))
-                    .map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
-
-            List<Booking> bookings = allBookings.stream().filter(booking -> booking.getItem().equals(item))
-                    .sorted(Comparator.comparing(Booking::getStart)).collect(Collectors.toList());
-            List<Booking> reversedBookings = new ArrayList<>(bookings);
-            Collections.reverse(reversedBookings);
-
-            ShortBookingItemDto lastBooking = null;
-            ShortBookingItemDto nextBooking = null;
-
-            if (item.getOwner().getId() == userId) {
-                Optional<Booking> nextBookingOptional = bookings.stream()
-                        .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
-                Optional<Booking> lastBookingOptional = reversedBookings.stream()
-                        .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
-
-                if (lastBookingOptional.isPresent())
-                    lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
-                if (nextBookingOptional.isPresent())
-                    nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
-            }
-            itemBookingsDtos.add(ItemMapper.toItemBookingsDto(
-                    item, lastBooking, nextBooking, comments));
-
+            // добавляем Отзывы и Бронирования
+            itemBookingsDtos.add(addLastAndNextBookingToItem(allComments, allBookings, item));
         });
         return itemBookingsDtos;
+    }
+
+    private ItemBookingsDto addLastAndNextBookingToItem(Collection<Comment> comments,
+                                                        Collection<Booking> bookings, Item item) {
+        // формируем в потоке Список отзывов для этой вещи
+        Collection<OutComingCommentDto> outComingCommentDtoList = comments.stream()
+                .filter(comment -> comment.getItem().equals(item))
+                .map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
+        // формируем в потоке Список Бронирований к этой вещи
+        List<Booking> bookingsOfItem = bookings.stream()
+                .filter(booking -> booking.getItem().equals(item)).collect(Collectors.toList());
+        // создаем обратный список бронирований вещи
+        List<Booking> reversedBookings = new ArrayList<>(bookingsOfItem);
+        Collections.reverse(reversedBookings);
+
+        ShortBookingItemDto lastBooking = null;
+        ShortBookingItemDto nextBooking = null;
+
+        // находим в потоке следующее бронирование
+        Optional<Booking> nextBookingOptional = bookingsOfItem.stream()
+                .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
+        // находим в потоке предыдущее бронирование
+        Optional<Booking> lastBookingOptional = reversedBookings.stream()
+                .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
+
+        if (lastBookingOptional.isPresent())
+            // мапим бронирование
+            lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
+        if (nextBookingOptional.isPresent())
+            // мапим бронирование
+            nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
+        // мапим вещи с отзывами и бронированиями и возвращаем
+        return ItemMapper.toItemBookingsDto(item, lastBooking, nextBooking, outComingCommentDtoList);
     }
 }

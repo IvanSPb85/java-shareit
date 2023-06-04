@@ -4,10 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.DataBaseException;
 import ru.practicum.shareit.user.dao.UserRepository;
-import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
 import java.security.InvalidParameterException;
@@ -16,11 +17,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 @Slf4j
 @AllArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
+    @Transactional
+    @Override
     public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
         User saveUser;
@@ -36,6 +40,8 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toUserDto(saveUser);
     }
 
+    @Transactional
+    @Override
     public UserDto updateUser(long userId, UserDto userDto) {
         User updatingUser = UserMapper.toUser(findUser(userId));
         User user = UserMapper.toUser(userDto);
@@ -56,6 +62,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toUserDto(saveUser);
     }
 
+    @Override
     public UserDto findUser(long userId) {
         Optional<User> result = userRepository.findById(userId);
         if (result.isEmpty()) {
@@ -67,12 +74,15 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
     public Collection<UserDto> findAll() {
         Collection<User> users = userRepository.findAll();
         log.info("Найдено {} пользователей.", users.size());
         return users.stream().map(UserMapper::toUserDto).collect(Collectors.toList());
     }
 
+    @Transactional
+    @Override
     public void deleteUser(long userId) {
         if (userRepository.existsById(userId)) {
             userRepository.deleteById(userId);

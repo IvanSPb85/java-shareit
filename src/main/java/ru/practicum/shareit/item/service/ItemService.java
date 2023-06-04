@@ -15,9 +15,9 @@ public interface ItemService {
 
     ItemBookingsDto findItemById(long userId, long itemId);
 
-    Collection<ItemBookingsDto> findItemsByOwner(long userId);
+    Collection<ItemBookingsDto> findItemsByOwner(long userId, Integer from, Integer size);
 
-    Collection<ItemDto> findItemForRent(long userId, String itemName);
+    Collection<ItemDto> findItemForRent(long userId, String itemName, Integer from, Integer size);
 
     Item findItem(long itemId);
 

@@ -35,4 +35,6 @@ public class Item {
 
     @ManyToOne
     private User owner;
+
+    private Long requestId;
 }

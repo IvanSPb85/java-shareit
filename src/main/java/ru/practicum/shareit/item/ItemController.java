@@ -21,10 +21,12 @@ import ru.practicum.shareit.item.service.ItemService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import java.util.Collection;
 
-import static ru.practicum.shareit.constant.Constant.*;
+import static ru.practicum.shareit.constant.Constant.REQUEST_GET_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_HEADER_USER_ID;
+import static ru.practicum.shareit.constant.Constant.REQUEST_PATCH_LOG;
+import static ru.practicum.shareit.constant.Constant.REQUEST_POST_LOG;
 
 @Slf4j
 @RestController
@@ -34,46 +36,57 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ResponseEntity<ItemDto> create(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                          @RequestBody @Valid ItemDto itemDto, HttpServletRequest request) {
+    public ResponseEntity<ItemDto> create(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @RequestBody @Valid ItemDto itemDto, HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemService.create(userId, itemDto), HttpStatus.OK);
     }
 
     @PatchMapping("/{itemId}")
-    public ResponseEntity<ItemDto> update(@RequestHeader(REQUEST_HEADER_USER_ID) long userId, @PathVariable long itemId,
-                                          @RequestBody ItemDto itemDto, HttpServletRequest request) {
+    public ResponseEntity<ItemDto> update(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @PathVariable long itemId,
+            @RequestBody ItemDto itemDto, HttpServletRequest request) {
         log.info(REQUEST_PATCH_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemService.update(userId, itemId, itemDto), HttpStatus.OK);
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemBookingsDto> findItemById(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                        @PathVariable long itemId, HttpServletRequest request) {
+    public ResponseEntity<ItemBookingsDto> findItemById(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @PathVariable long itemId, HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
         return new ResponseEntity<>(itemService.findItemById(userId, itemId), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<ItemBookingsDto>> findItemsByOwner(@RequestHeader(REQUEST_HEADER_USER_ID)
-                                                                        long userId, HttpServletRequest request) {
+    public ResponseEntity<Collection<ItemBookingsDto>> findItemsByOwner(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @RequestParam(required = false, defaultValue = "0") Integer from,
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.findItemsByOwner(userId), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.findItemsByOwner(userId, from, size), HttpStatus.OK);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Collection<ItemDto>> findItemForRent(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                               @RequestParam(name = "text") String itemName,
-                                                               HttpServletRequest request) {
+    public ResponseEntity<Collection<ItemDto>> findItemForRent(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @RequestParam(name = "text") String itemName,
+            @RequestParam(required = false, defaultValue = "0") Integer from,
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            HttpServletRequest request) {
         log.info(REQUEST_GET_LOG, request.getRequestURI());
-        return new ResponseEntity<>(itemService.findItemForRent(userId, itemName), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.findItemForRent(userId, itemName, from, size), HttpStatus.OK);
     }
 
     @PostMapping("/{itemId}/comment")
-    public ResponseEntity<OutComingCommentDto> createComment(@RequestHeader(REQUEST_HEADER_USER_ID) long userId,
-                                                             @PathVariable long itemId,
-                                                             @RequestBody @Valid InComingCommentDto inComingCommentDto,
-                                                             HttpServletRequest request) {
+    public ResponseEntity<OutComingCommentDto> createComment(
+            @RequestHeader(REQUEST_HEADER_USER_ID) long userId,
+            @PathVariable long itemId,
+            @RequestBody @Valid InComingCommentDto inComingCommentDto,
+            HttpServletRequest request) {
         log.info(REQUEST_POST_LOG, request.getRequestURI());
         return new ResponseEntity<OutComingCommentDto>(itemService.createComment(
                 userId, itemId, inComingCommentDto), HttpStatus.OK);

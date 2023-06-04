@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -156,50 +157,57 @@ public class ItemServiceImpl implements ItemService {
         List<Long> itemIdList = new ArrayList<>();
         items.forEach(item -> itemIdList.add(item.getId()));
         // получаем из базы данных Список всех Отзывов согласно списку идентификаторов
-        Collection<Comment> allComments = commentRepository.findAllByItemIdIn(itemIdList);
+        // и группируем их в словаре по идентификаторам вещей
+        Map<Long, List<Comment>> allComments = commentRepository.findAllByItemIdIn(itemIdList)
+                .stream().collect(Collectors.groupingBy(comment -> comment.getItem().getId()));
         // получаем из базы данных отсортированный по времени
         // Список всех одобренных Бронирований согласно списку идентификаторов
-        Collection<Booking> allBookings = bookingRepository
-                .findAllByItemIdInAndStatusOrderByStartAsc(itemIdList, Status.APPROVED);
+        // и группируем их в словаре по идентификаторам вещей
+        Map<Long, List<Booking>> allBookings = bookingRepository
+                .findAllByItemIdInAndStatusOrderByStartAsc(itemIdList, Status.APPROVED)
+                .stream().collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
         // создаем Новый пустой Список Вещей с отзывами и бронированиями
         Collection<ItemBookingsDto> itemBookingsDtos = new ArrayList<>();
         // для каждой вещи:
         items.forEach(item -> {
             // добавляем Отзывы и Бронирования
-            itemBookingsDtos.add(addLastAndNextBookingToItem(allComments, allBookings, item));
+            itemBookingsDtos.add(addLastAndNextBookingToItem(allComments.get(item.getId()),
+                    allBookings.get(item.getId()), item));
         });
         return itemBookingsDtos;
     }
 
     private ItemBookingsDto addLastAndNextBookingToItem(Collection<Comment> comments,
                                                         Collection<Booking> bookings, Item item) {
-        // формируем в потоке Список отзывов для этой вещи
-        Collection<OutComingCommentDto> outComingCommentDtoList = comments.stream()
-                .filter(comment -> comment.getItem().equals(item))
+        // создаем новый пустой список отзывов для вещи
+        Collection<OutComingCommentDto> outComingCommentDtoList = Collections.emptyList();
+        // если отзывы для вещи существуют мапим в потоке Список отзывов для этой вещи
+        if (comments != null) outComingCommentDtoList = comments.stream()
                 .map(CommentMapper::toOutComingCommentDto).collect(Collectors.toList());
-        // формируем в потоке Список Бронирований к этой вещи
-        List<Booking> bookingsOfItem = bookings.stream()
-                .filter(booking -> booking.getItem().equals(item)).collect(Collectors.toList());
-        // создаем обратный список бронирований вещи
-        List<Booking> reversedBookings = new ArrayList<>(bookingsOfItem);
-        Collections.reverse(reversedBookings);
 
         ShortBookingItemDto lastBooking = null;
         ShortBookingItemDto nextBooking = null;
 
-        // находим в потоке следующее бронирование
-        Optional<Booking> nextBookingOptional = bookingsOfItem.stream()
-                .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
-        // находим в потоке предыдущее бронирование
-        Optional<Booking> lastBookingOptional = reversedBookings.stream()
-                .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
+        // если бронирования для вещи существуют
+        if (bookings != null) {
+            // создаем обратный список бронирований вещи
+            List<Booking> reversedBookings = new ArrayList<>(bookings);
+            Collections.reverse(reversedBookings);
 
-        if (lastBookingOptional.isPresent())
-            // мапим бронирование
-            lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
-        if (nextBookingOptional.isPresent())
-            // мапим бронирование
-            nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
+            // находим в потоке следующее бронирование
+            Optional<Booking> nextBookingOptional = bookings.stream()
+                    .dropWhile(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst();
+            // находим в потоке предыдущее бронирование
+            Optional<Booking> lastBookingOptional = reversedBookings.stream()
+                    .dropWhile(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst();
+
+            if (lastBookingOptional.isPresent())
+                // мапим бронирование
+                lastBooking = BookingMapper.shortBookingItemDto(lastBookingOptional.get());
+            if (nextBookingOptional.isPresent())
+                // мапим бронирование
+                nextBooking = BookingMapper.shortBookingItemDto(nextBookingOptional.get());
+        }
         // мапим вещи с отзывами и бронированиями и возвращаем
         return ItemMapper.toItemBookingsDto(item, lastBooking, nextBooking, outComingCommentDtoList);
     }

@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @Slf4j
 @AllArgsConstructor
 public class BookingServiceImpl implements BookingService {
